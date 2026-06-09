@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>House Price Prediction | AI-Powered Real Estate Intelligence</title>
+  <meta name="description" content="Predict residential property prices across India using advanced AI and machine learning. Get instant, accurate price estimates for any city, locality and property type." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════ BACKGROUND ═══════════ -->
+  <div class="bg-mesh" aria-hidden="true"></div>
+  <div class="bg-orb orb-1" aria-hidden="true"></div>
+  <div class="bg-orb orb-2" aria-hidden="true"></div>
+  <div class="bg-orb orb-3" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════ NAVBAR ═══════════════ -->
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-container">
+      <a href="/" class="nav-brand" aria-label="House Price Prediction Home">
+        <span class="brand-icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </span>
+        <span class="brand-text">House<span class="brand-accent">AI</span></span>
+      </a>
+      <div class="nav-links" role="list">
+        <button class="nav-link active" id="nav-predict" role="listitem" onclick="switchTab('predict')">
+          <span class="nav-icon">⚡</span> Predict
+        </button>
+        <button class="nav-link" id="nav-analytics" role="listitem" onclick="switchTab('analytics')">
+          <span class="nav-icon">📊</span> Analytics
+        </button>
+        <button class="nav-link" id="nav-history" role="listitem" onclick="switchTab('history')">
+          <span class="nav-icon">🕐</span> History
+        </button>
+      </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════ MAIN CONTENT ══════════ -->
+  <main class="main-content">
+
+    <!-- ── HERO SECTION ───────────────────────────────────────────── -->
+    <section class="hero-section" id="heroSection">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          AI-Powered Price Intelligence
+        </div>
+        <h1 class="hero-title">
+          House Price<br />
+          <span class="gradient-text">Prediction</span>
+        </h1>
+        <p class="hero-subtitle">
+          Get instant, AI-driven property valuations across India's top cities.
+          Powered by a Gradient Boosting model trained on 100,000+ real-estate data points.
+        </p>
+      </div>
+    </section>
+
+    <!-- ── TAB: PREDICT ──────────────────────────────────────────── -->
+    <section class="tab-content active" id="tab-predict" role="tabpanel" aria-label="Price prediction form">
+      <div class="predict-layout">
+
+        <!-- FORM CARD -->
+        <div class="form-card glass-card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <span class="card-icon" aria-hidden="true">🏠</span>
+              Property Details
+            </h2>
+            <p class="card-subtitle">Fill in the property details to get an instant price estimate</p>
+          </div>
+
+          <form id="predictionForm" class="prediction-form" novalidate aria-label="Property prediction form">
+
+            <!-- ROW 1: City & Locality -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="city" class="form-label">City *</label>
+                <div class="select-wrapper">
+                  <select id="city" name="city" class="form-select" required aria-required="true">
+                    <option value="">Select City</option>
+                  </select>
+                  <span class="select-arrow" aria-hidden="true">▾</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="locality" class="form-label">Locality *</label>
+                <div class="select-wrapper">
+                  <select id="locality" name="locality" class="form-select" required aria-required="true" disabled>
+                    <option value="">Select Locality</option>
+                  </select>
+                  <span class="select-arrow" aria-hidden="true">▾</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ROW 2: BHK & Size Slider -->
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">BHK Configuration *</label>
+                <div class="bhk-chips" role="radiogroup" aria-label="BHK selection">
+                  <button type="button" class="bhk-chip" data-bhk="1" id="bhk-1" aria-pressed="false">1 BHK</button>
+                  <button type="button" class="bhk-chip" data-bhk="2" id="bhk-2" aria-pressed="false">2 BHK</button>
+                  <button type="button" class="bhk-chip selected" data-bhk="3" id="bhk-3" aria-pressed="true">3 BHK</button>
+                  <button type="button" class="bhk-chip" data-bhk="4" id="bhk-4" aria-pressed="false">4 BHK</button>
+                  <button type="button" class="bhk-chip" data-bhk="5" id="bhk-5" aria-pressed="false">5 BHK</button>
+                </div>
+                <input type="hidden" id="bhk" name="bhk" value="3" />
+              </div>
+              <div class="form-group">
+                <label for="size_sqft" class="form-label">
+                  Size: <span class="slider-value" id="sizeDisplay">1500</span> sq.ft
+                </label>
+                <div class="slider-container">
+                  <input type="range" id="size_sqft" name="size_sqft" class="range-slider"
+                    min="200" max="10000" step="50" value="1500"
+                    aria-label="Property size in square feet" />
+                  <div class="slider-track-fill" id="sizeTrack"></div>
+                </div>
+                <div class="slider-labels" aria-hidden="true">
+                  <span>200 sq.ft</span><span>10,000 sq.ft</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ROW 3: Property Type & Furnishing -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="property_type" class="form-label">Property Type *</label>
+                <div class="select-wrapper">
+                  <select id="property_type" name="property_type" class="form-select" required aria-required="true">
+                    <option value="Apartment">🏢 Apartment</option>
+                    <option value="Independent House">🏠 Independent House</option>
+                    <option value="Villa">🏡 Villa</option>
+                    <option value="Penthouse">🏰 Penthouse</option>
+                  </select>
+                  <span class="select-arrow" aria-hidden="true">▾</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="furnishing" class="form-label">Furnishing Status *</label>
+                <div class="select-wrapper">
+                  <select id="furnishing" name="furnishing" class="form-select" required aria-required="true">
+                    <option value="Unfurnished">🪑 Unfurnished</option>
+                    <option value="Semi-Furnished" selected>🛋️ Semi-Furnished</option>
+                    <option value="Fully Furnished">🏠 Fully Furnished</option>
+                  </select>
+                  <span class="select-arrow" aria-hidden="true">▾</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ROW 4: Bathrooms & Balconies -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bathrooms" class="form-label">Bathrooms</label>
+                <div class="number-stepper" role="group" aria-label="Bathrooms stepper">
+                  <button type="button" class="stepper-btn" id="bathDec" aria-label="Decrease bathrooms">−</button>
+                  <span class="stepper-value" id="bathDisplay" aria-live="polite">2</span>
+                  <button type="button" class="stepper-btn" id="bathInc" aria-label="Increase bathrooms">+</button>
+                </div>
+                <input type="hidden" id="bathrooms" name="bathrooms" value="2" />
+              </div>
+              <div class="form-group">
+                <label for="balconies" class="form-label">Balconies</label>
+                <div class="number-stepper" role="group" aria-label="Balconies stepper">
+                  <button type="button" class="stepper-btn" id="balcDec" aria-label="Decrease balconies">−</button>
+                  <span class="stepper-value" id="balcDisplay" aria-live="polite">1</span>
+                  <button type="button" class="stepper-btn" id="balcInc" aria-label="Increase balconies">+</button>
+                </div>
+                <input type="hidden" id="balconies" name="balconies" value="1" />
+              </div>
+            </div>
+
+            <!-- ROW 5: Property Age & Metro Distance -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="property_age" class="form-label">
+                  Property Age: <span class="slider-value" id="ageDisplay">3</span> yrs
+                </label>
+                <div class="slider-container">
+                  <input type="range" id="property_age" name="property_age" class="range-slider"
+                    min="0" max="30" step="1" value="3"
+                    aria-label="Property age in years" />
+                </div>
+                <div class="slider-labels" aria-hidden="true">
+                  <span>New</span><span>30 yrs</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="distance_metro" class="form-label">
+                  Metro Distance: <span class="slider-value" id="metroDisplay">2.0</span> km
+                </label>
+                <div class="slider-container">
+                  <input type="range" id="distance_metro" name="distance_metro" class="range-slider"
+                    min="0.2" max="15" step="0.1" value="2.0"
+                    aria-label="Distance to nearest metro in kilometers" />
+                </div>
+                <div class="slider-labels" aria-hidden="true">
+                  <span>0.2 km</span><span>15 km</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- AMENITIES -->
+            <div class="form-group full-width">
+              <label class="form-label">Amenities</label>
+              <div class="amenity-grid" role="group" aria-label="Available amenities">
+                <button type="button" class="amenity-chip" data-amenity="has_gym" id="amenity-gym" aria-pressed="false">
+                  <span class="amenity-icon" aria-hidden="true">💪</span> Gym
+                </button>
+                <button type="button" class="amenity-chip" data-amenity="has_pool" id="amenity-pool" aria-pressed="false">
+                  <span class="amenity-icon" aria-hidden="true">🏊</span> Pool
+                </button>
+                <button type="button" class="amenity-chip active" data-amenity="has_security" id="amenity-security" aria-pressed="true">
+                  <span class="amenity-icon" aria-hidden="true">🔒</span> Security
+                </button>
+                <button type="button" class="amenity-chip active" data-amenity="has_power_backup" id="amenity-power" aria-pressed="true">
+                  <span class="amenity-icon" aria-hidden="true">⚡</span> Power Backup
+                </button>
+                <button type="button" class="amenity-chip" data-amenity="has_clubhouse" id="amenity-clubhouse" aria-pressed="false">
+                  <span class="amenity-icon" aria-hidden="true">🏛️</span> Clubhouse
+                </button>
+                <button type="button" class="amenity-chip active" data-amenity="has_parking" id="amenity-parking" aria-pressed="true">
+                  <span class="amenity-icon" aria-hidden="true">🚗</span> Parking
+                </button>
+              </div>
+            </div>
+
+            <!-- SUBMIT -->
+            <button type="submit" class="predict-btn" id="predictBtn" aria-label="Get price prediction">
+              <span class="btn-icon" aria-hidden="true">✨</span>
+              <span class="btn-text">Get Price Estimate</span>
+              <span class="btn-loader" aria-hidden="true"></span>
+            </button>
+          </form>
+        </div>
+
+        <!-- RESULTS PANEL -->
+        <div class="results-panel" id="resultsPanel" aria-live="polite" aria-label="Prediction results">
+
+          <!-- PLACEHOLDER -->
+          <div class="results-placeholder" id="resultsPlaceholder">
+            <div class="placeholder-icon" aria-hidden="true">🏡</div>
+            <h3 class="placeholder-title">Ready for Estimation</h3>
+            <p class="placeholder-text">Fill in the property details and click <strong>Get Price Estimate</strong> to receive an AI-powered valuation.</p>
+            <div class="placeholder-bullets">
+              <div class="bullet-item"><span aria-hidden="true">✅</span> Instant prediction</div>
+              <div class="bullet-item"><span aria-hidden="true">✅</span> Confidence interval</div>
+              <div class="bullet-item"><span aria-hidden="true">✅</span> Feature breakdown</div>
+            </div>
+          </div>
+
+          <!-- RESULT CARD (hidden until prediction) -->
+          <div class="result-content hidden" id="resultContent">
+            <!-- Price Display -->
+            <div class="price-card glass-card">
+              <div class="price-header">
+                <div class="price-badge">
+                  <span aria-hidden="true">🎯</span> AI Valuation
+                </div>
+                <div class="confidence-badge" id="confidenceBadge">92% Confidence</div>
+              </div>
+              <div class="price-main">
+                <span class="currency-symbol" aria-hidden="true">₹</span>
+                <span class="price-value" id="priceValue" aria-live="polite">—</span>
+                <span class="price-unit" id="priceUnit">Lakhs</span>
+              </div>
+              <div class="price-psf">
+                <span id="pricePsf">₹—</span> per sq.ft
+              </div>
+              <div class="price-range" role="group" aria-label="Price confidence range">
+                <div class="range-label">Price Range (±8%)</div>
+                <div class="range-bar-container">
+                  <div class="range-bar" aria-hidden="true">
+                    <div class="range-fill"></div>
+                    <div class="range-marker" id="rangeMarker"></div>
+                  </div>
+                </div>
+                <div class="range-values">
+                  <span class="range-low" id="rangeLow">—</span>
+                  <span class="range-high" id="rangeHigh">—</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Property Summary -->
+            <div class="summary-card glass-card">
+              <h3 class="section-title">Property Summary</h3>
+              <div class="summary-grid" id="summaryGrid">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Feature Impact -->
+            <div class="impact-card glass-card">
+              <h3 class="section-title">Price Impact Factors</h3>
+              <div class="impact-list" id="impactList">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="result-actions">
+              <button class="action-btn secondary" onclick="resetForm()" id="resetBtn">
+                <span aria-hidden="true">🔄</span> New Prediction
+              </button>
+              <button class="action-btn primary" onclick="openFeedbackModal()" id="feedbackBtn">
+                <span aria-hidden="true">⭐</span> Rate Accuracy
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── TAB: ANALYTICS ───────────────────────────────────────── -->
+    <section class="tab-content hidden" id="tab-analytics" role="tabpanel" aria-label="Analytics dashboard">
+      <div class="analytics-layout">
+
+        <!-- Model Info Cards -->
+        <div class="model-stats-row" role="list" aria-label="Model performance statistics">
+          <div class="model-stat-card glass-card" role="listitem">
+            <div class="mstat-icon" aria-hidden="true">🎯</div>
+            <div class="mstat-value" id="analyticsR2">—</div>
+            <div class="mstat-label">R² Score</div>
+          </div>
+          <div class="model-stat-card glass-card" role="listitem">
+            <div class="mstat-icon" aria-hidden="true">📉</div>
+            <div class="mstat-value" id="analyticsMAE">—</div>
+            <div class="mstat-label">Mean Abs. Error</div>
+          </div>
+          <div class="model-stat-card glass-card" role="listitem">
+            <div class="mstat-icon" aria-hidden="true">🏘️</div>
+            <div class="mstat-value" id="analyticsPredictions">—</div>
+            <div class="mstat-label">Total Predictions</div>
+          </div>
+          <div class="model-stat-card glass-card" role="listitem">
+            <div class="mstat-icon" aria-hidden="true">🏙️</div>
+            <div class="mstat-value">20</div>
+            <div class="mstat-label">Cities Covered</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-card glass-card">
+            <h3 class="chart-title">Average Price per Sq.Ft by City (₹)</h3>
+            <div class="chart-container">
+              <canvas id="cityPriceChart" aria-label="Bar chart showing average price per square foot by city"></canvas>
+            </div>
+          </div>
+          <div class="chart-card glass-card">
+            <h3 class="chart-title">Feature Impact on Price</h3>
+            <div class="chart-container">
+              <canvas id="featureImportanceChart" aria-label="Doughnut chart showing feature importance breakdown"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- City Price Table -->
+        <div class="table-card glass-card">
+          <h3 class="chart-title">City Market Overview</h3>
+          <div class="table-wrapper" role="region" aria-label="City market overview table">
+            <table class="market-table" aria-label="Market prices by city">
+              <thead>
+                <tr>
+                  <th scope="col">City</th>
+                  <th scope="col">Avg. Price/Sq.Ft</th>
+                  <th scope="col">Market Trend</th>
+                  <th scope="col">Tier</th>
+                </tr>
+              </thead>
+              <tbody id="cityTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── TAB: HISTORY ─────────────────────────────────────────── -->
+    <section class="tab-content hidden" id="tab-history" role="tabpanel" aria-label="Prediction history">
+      <div class="history-layout">
+        <div class="history-header">
+          <h2 class="section-heading">Recent Predictions</h2>
+          <button class="refresh-btn" onclick="loadHistory()" aria-label="Refresh history">
+            <span aria-hidden="true">🔄</span> Refresh
+          </button>
+        </div>
+        <div class="history-grid" id="historyGrid" aria-live="polite">
+          <div class="history-empty" id="historyEmpty">
+            <span aria-hidden="true">📋</span>
+            <p>No predictions yet. Make your first prediction!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════ FEEDBACK MODAL ════════ -->
+  <div class="modal-overlay hidden" id="feedbackModal" role="dialog" aria-modal="true" aria-labelledby="feedbackModalTitle">
+    <div class="modal-card glass-card">
+      <button class="modal-close" onclick="closeFeedbackModal()" aria-label="Close feedback modal">✕</button>
+      <h3 class="modal-title" id="feedbackModalTitle">Rate Prediction Accuracy</h3>
+      <p class="modal-subtitle">Help us improve by sharing how accurate this estimate was</p>
+
+      <div class="star-rating" role="group" aria-label="Star rating">
+        <button class="star" data-rating="1" id="star-1" aria-label="1 star">★</button>
+        <button class="star" data-rating="2" id="star-2" aria-label="2 stars">★</button>
+        <button class="star" data-rating="3" id="star-3" aria-label="3 stars">★</button>
+        <button class="star" data-rating="4" id="star-4" aria-label="4 stars">★</button>
+        <button class="star" data-rating="5" id="star-5" aria-label="5 stars">★</button>
+      </div>
+      <p class="rating-label" id="ratingLabel">Select a rating</p>
+
+      <div class="form-group">
+        <label for="actualPrice" class="form-label">Actual Price (₹ Lakhs) — optional</label>
+        <input type="number" id="actualPrice" class="form-input" placeholder="e.g. 85.5" step="0.5" min="0" />
+      </div>
+
+      <div class="form-group">
+        <label for="feedbackComment" class="form-label">Comments — optional</label>
+        <textarea id="feedbackComment" class="form-input form-textarea" placeholder="Share your thoughts..."></textarea>
+      </div>
+
+      <button class="predict-btn" onclick="submitFeedback()" id="submitFeedbackBtn" aria-label="Submit feedback">
+        <span class="btn-icon" aria-hidden="true">✓</span>
+        <span class="btn-text">Submit Feedback</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ TOAST ════════════════ -->
+  <div class="toast-container" id="toastContainer" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- ═══════════════════════════════════════ FOOTER ═══════════════ -->
+  <footer class="footer" role="contentinfo">
+    <div class="footer-content">
+      <p>House Price Prediction &copy; 2024 · Powered by AI & Machine Learning</p>
+      <p class="footer-sub">Gradient Boosting Regressor · 15,000+ Training Samples · 8 Indian Cities</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

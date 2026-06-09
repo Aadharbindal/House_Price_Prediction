@@ -1,0 +1,26 @@
+# .gitignore for House Price Prediction (Express.js + Python ML)
+
+# Node.js
+node_modules/
+backend/node_modules/
+.env
+backend/.env
+package-lock.json
+
+# Python / Machine Learning
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+ml/__pycache__/
+ml/*.pyc
+ml/data/dataset.csv
+
+# Temporary stores & Local database fallbacks
+data/fallback_store.json
+backend/data/fallback_store.json
+
+# OS files
+.DS_Store
+Thumbs.db

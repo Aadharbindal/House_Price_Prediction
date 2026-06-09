@@ -1,0 +1,34 @@
+{
+  "r2_score": 0.9485,
+  "mae": 2231258.0,
+  "rmse": 4157494.0,
+  "group_importance": {
+    "Location (City & Locality)": 59.16,
+    "Size & BHK": 31.33,
+    "Property Type": 2.03,
+    "Furnishing": 0.4,
+    "Amenities": 4.56,
+    "Age & Connectivity": 2.52
+  },
+  "feature_cols": [
+    "city",
+    "locality",
+    "bhk",
+    "size_sqft",
+    "property_type",
+    "furnishing",
+    "bathrooms",
+    "balconies",
+    "property_age",
+    "distance_metro",
+    "amenity_score",
+    "has_gym",
+    "has_pool",
+    "has_security",
+    "has_power_backup",
+    "has_clubhouse",
+    "has_parking"
+  ],
+  "n_train": 85000,
+  "n_test": 15000
+}
