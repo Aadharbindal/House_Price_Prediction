@@ -3,7 +3,7 @@
  * Handles: API calls, form interactions, charts, history, modals, toasts
  */
 
-const API_BASE = 'http://127.0.0.1:8000';
+const API_BASE = window.location.origin;
 
 // ═══════════════════════════════════════════════════════
 //  STATE

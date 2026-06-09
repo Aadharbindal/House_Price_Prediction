@@ -1,0 +1,19 @@
+# Render.com Web Service Specification
+# Deploys Node.js Express server + Python environment for ML models
+
+services:
+  - type: web
+    name: house-price-prediction
+    env: node
+    plan: free
+    buildCommand: |
+      cd backend && npm install && cd .. && pip install scikit-learn pandas numpy joblib
+    startCommand: |
+      node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: PYTHON_CMD
+        value: python3
