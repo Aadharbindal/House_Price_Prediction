@@ -6,10 +6,11 @@ services:
     name: house-price-prediction
     env: node
     plan: free
+    rootDir: backend
     buildCommand: |
-      cd backend && npm install && cd .. && pip install scikit-learn pandas numpy joblib
+      npm install && pip install scikit-learn pandas numpy joblib
     startCommand: |
-      node backend/server.js
+      node server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -17,3 +18,4 @@ services:
         value: 10000
       - key: PYTHON_CMD
         value: python3
+
