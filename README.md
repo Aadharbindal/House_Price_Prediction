@@ -2,8 +2,6 @@
 
 A dynamic property valuation system built with a Node.js Express REST API backend and a responsive glassmorphic frontend. It leverages a Gradient Boosting Regressor model trained on 100,000+ data points to predict residential property prices across 20 major Indian cities.
 
-**Live Demo:** [https://house-price-prediction-w1j9.onrender.com](https://house-price-prediction-w1j9.onrender.com)
-
 ---
 
 ## Features
@@ -18,6 +16,8 @@ A dynamic property valuation system built with a Node.js Express REST API backen
 ## Installation & Setup
 
 Ensure you have **Node.js** and **Python 3** installed.
+
+**Live Demo:** [https://house-price-prediction-w1j9.onrender.com](https://house-price-prediction-w1j9.onrender.com)
 
 ### 1. Configure the Project
 Run the setup script to install Node packages, set up the Python environment, generate the dataset, and train the machine learning model:
