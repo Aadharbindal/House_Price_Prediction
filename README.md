@@ -2,6 +2,8 @@
 
 A dynamic property valuation system built with a Node.js Express REST API backend and a responsive glassmorphic frontend. It leverages a Gradient Boosting Regressor model trained on 100,000+ data points to predict residential property prices across 20 major Indian cities.
 
+**Live Demo:** [https://house-price-prediction-wlj9.onrender.com](https://house-price-prediction-wlj9.onrender.com)
+
 ---
 
 ## Features
