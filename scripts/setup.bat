@@ -9,6 +9,10 @@ echo    Stack: Node.js + Express + MySQL + Python ML
 echo  ═══════════════════════════════════════════════════
 echo.
 
+:: Run everything from the repository root, whatever directory this script
+:: was launched from.
+cd /d "%~dp0.."
+
 :: ── Check Node.js ─────────────────────────────────────────────
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
@@ -70,7 +74,7 @@ echo  ════════════════════════�
 echo    Setup Complete!
 echo    1. Edit backend\.env with your MySQL credentials
 echo    2. Make sure MySQL is running
-echo    3. Run: start.bat
+echo    3. Run: scripts\start.bat
 echo  ═══════════════════════════════════════════════════
 echo.
 pause

@@ -7,8 +7,13 @@ services:
     env: node
     plan: free
     rootDir: backend
+    # Installs the pinned versions rather than resolving them fresh. model.joblib
+    # is a pickle, and a pickle only reloads reliably on the library versions it
+    # was written with - scikit-learn 1.5.0 and numpy 1.x here. Left unpinned,
+    # pip would pull numpy 2.x, whose internals moved, and prediction would
+    # break on the host while still working locally.
     buildCommand: |
-      npm install && pip install scikit-learn pandas numpy joblib
+      npm install && pip install -r ../ml/requirements.txt
     startCommand: |
       node server.js
     envVars:
