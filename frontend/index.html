@@ -31,17 +31,45 @@
         </span>
         <span class="brand-text">House<span class="brand-accent">AI</span></span>
       </a>
+      <!-- Inline SVG rather than emoji. Emoji render in whichever emoji font
+           the operating system supplies, so the three icons arrived in
+           different colours, weights and baselines depending on the machine.
+           These inherit currentColor and sit on the text baseline. -->
       <div class="nav-links" role="list">
         <button class="nav-link active" id="nav-predict" role="listitem" onclick="switchTab('predict')">
-          <span class="nav-icon">⚡</span> Predict
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2 4.5 13.5H11l-1 8.5 8.5-11.5H12l1-8.5Z"/>
+            </svg>
+          </span>
+          Predict
         </button>
         <button class="nav-link" id="nav-analytics" role="listitem" onclick="switchTab('analytics')">
-          <span class="nav-icon">📊</span> Analytics
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"/>
+              <path d="M7.5 15.5 11 11l3 2.5L19 7"/>
+            </svg>
+          </span>
+          Analytics
         </button>
         <button class="nav-link" id="nav-history" role="listitem" onclick="switchTab('history')">
-          <span class="nav-icon">🕐</span> History
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8.5"/>
+              <path d="M12 7.5V12l3 1.8"/>
+            </svg>
+          </span>
+          History
         </button>
       </div>
+
+      <!-- The stylesheet already carried .nav-status and .status-dot, but no
+           markup used them - which is why the right side of the bar was empty.
+           Restored, reporting the model's real validation score. -->
+      <div class="nav-status" title="Model validation R-squared">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span class="status-text">Model R&sup2; <strong>0.948</strong></span>
       </div>
     </div>
   </nav>
@@ -75,7 +103,7 @@
         <div class="form-card glass-card">
           <div class="card-header">
             <h2 class="card-title">
-              <span class="card-icon" aria-hidden="true">🏠</span>
+              <span class="card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 2.5l9 7V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20Z"/><path d="M9.5 21.5v-7h5v7"/></svg></span>
               Property Details
             </h2>
             <p class="card-subtitle">Fill in the property details to get an instant price estimate</p>
@@ -252,13 +280,13 @@
 
           <!-- PLACEHOLDER -->
           <div class="results-placeholder" id="resultsPlaceholder">
-            <div class="placeholder-icon" aria-hidden="true">🏡</div>
+            <div class="placeholder-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 2.5l9 7V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20Z"/><path d="M9.5 21.5v-7h5v7"/></svg></div>
             <h3 class="placeholder-title">Ready for Estimation</h3>
             <p class="placeholder-text">Fill in the property details and click <strong>Get Price Estimate</strong> to receive an AI-powered valuation.</p>
             <div class="placeholder-bullets">
-              <div class="bullet-item"><span aria-hidden="true">✅</span> Instant prediction</div>
-              <div class="bullet-item"><span aria-hidden="true">✅</span> Confidence interval</div>
-              <div class="bullet-item"><span aria-hidden="true">✅</span> Feature breakdown</div>
+              <div class="bullet-item"><span class="bullet-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span>Instant prediction</div>
+              <div class="bullet-item"><span class="bullet-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span>Confidence interval</div>
+              <div class="bullet-item"><span class="bullet-check" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg></span>Feature breakdown</div>
             </div>
           </div>
 
@@ -333,22 +361,22 @@
         <!-- Model Info Cards -->
         <div class="model-stats-row" role="list" aria-label="Model performance statistics">
           <div class="model-stat-card glass-card" role="listitem">
-            <div class="mstat-icon" aria-hidden="true">🎯</div>
+            <div class="mstat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg></div>
             <div class="mstat-value" id="analyticsR2">—</div>
             <div class="mstat-label">R² Score</div>
           </div>
           <div class="model-stat-card glass-card" role="listitem">
-            <div class="mstat-icon" aria-hidden="true">📉</div>
+            <div class="mstat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 3.5-3.5L21 17"/><path d="M21 12v5h-5"/></svg></div>
             <div class="mstat-value" id="analyticsMAE">—</div>
             <div class="mstat-label">Mean Abs. Error</div>
           </div>
           <div class="model-stat-card glass-card" role="listitem">
-            <div class="mstat-icon" aria-hidden="true">🏘️</div>
+            <div class="mstat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="M3 12.5 12 17l9-4.5"/><path d="M3 17 12 21.5 21 17"/></svg></div>
             <div class="mstat-value" id="analyticsPredictions">—</div>
             <div class="mstat-label">Total Predictions</div>
           </div>
           <div class="model-stat-card glass-card" role="listitem">
-            <div class="mstat-icon" aria-hidden="true">🏙️</div>
+            <div class="mstat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8.5L9.5 5v16"/><path d="M9.5 21V10l7 3.5V21"/><path d="M16.5 21V15l4.5 2.2V21"/><path d="M6 11.5h1M6 15h1M12.5 15h1M12.5 18h1"/></svg></div>
             <div class="mstat-value">20</div>
             <div class="mstat-label">Cities Covered</div>
           </div>

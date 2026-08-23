@@ -22,6 +22,8 @@ const state = {
 //  INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', async () => {
+  setupScrollReveal();
+  setupNavbarScroll();
   setupSliders();
   setupSteppers();
   setupBhkChips();
@@ -29,6 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupFormSubmit();
 
   await loadCities();
+  enhanceSelects();   // after the city options exist
   await loadAnalytics();
 
   // Load initial analytics stats for hero section
@@ -38,20 +41,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════
 //  TAB NAVIGATION
 // ═══════════════════════════════════════════════════════
+const TAB_EXIT_MS = 160;   // must match .tab-content.is-leaving in styles.css
+
 function switchTab(tab) {
-  // Hide all tabs
+  const outgoing = document.querySelector('.tab-content.active');
+  const tabEl    = document.getElementById(`tab-${tab}`);
+
+  // Already here - nothing to animate.
+  if (outgoing && outgoing === tabEl) return;
+
+  // Play the outgoing panel's exit before swapping. Removing it in the same
+  // frame as the new one arrives gives the browser nothing to animate, which
+  // is what made tab changes read as a hard cut.
+  if (outgoing) {
+    outgoing.classList.add('is-leaving');
+    setTimeout(() => {
+      outgoing.classList.remove('is-leaving', 'active');
+      outgoing.classList.add('hidden');
+    }, TAB_EXIT_MS);
+  }
+
   document.querySelectorAll('.tab-content').forEach(el => {
-    el.classList.remove('active');
-    el.classList.add('hidden');
+    if (el !== outgoing) { el.classList.remove('active'); el.classList.add('hidden'); }
   });
 
   // Remove active from all nav links
   document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
 
   // Show selected tab
-  const tabEl = document.getElementById(`tab-${tab}`);
   const navEl = document.getElementById(`nav-${tab}`);
-  if (tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('active'); }
+  const show = () => {
+    if (tabEl) { tabEl.classList.remove('hidden'); tabEl.classList.add('active'); }
+  };
+  if (outgoing) setTimeout(show, TAB_EXIT_MS); else show();
+
   if (navEl) navEl.classList.add('active');
 
   // Load data for tab
@@ -174,7 +197,7 @@ function populateCityDropdown() {
   state.cities.forEach(cityInfo => {
     const opt = document.createElement('option');
     opt.value = cityInfo.city;
-    opt.textContent = `${getCityEmoji(cityInfo.city)} ${cityInfo.city}`;
+    opt.textContent = cityInfo.city;
     citySelect.appendChild(opt);
   });
 
@@ -206,15 +229,10 @@ function populateLocalities(cityName) {
   });
 }
 
-function getCityEmoji(city) {
-  const map = {
-    'Mumbai': '🌊', 'Bangalore': '🌿', 'Delhi NCR': '🏛️', 'Pune': '🌄', 'Hyderabad': '🌹',
-    'Chennai': '🌊', 'Kolkata': '🌸', 'Ahmedabad': '🎯', 'Surat': '💎', 'Jaipur': '🏰',
-    'Lucknow': '🕌', 'Kochi': '🌴', 'Nagpur': '🍊', 'Indore': '🧹', 'Bhopal': '🏞️',
-    'Coimbatore': '⚙️', 'Vizag': '🏖️', 'Chandigarh': '🌳', 'Mysore': '🕌', 'Goa': '🏖️'
-  };
-  return map[city] || '🏙️';
-}
+// getCityEmoji lived here. It mapped each city to a decorative emoji -
+// Mumbai to a wave, Indore to a broom - which rendered differently on every
+// machine and carried no meaning. The history cards now use one location pin
+// and the city dropdown just names the city.
 
 // ═══════════════════════════════════════════════════════
 //  FORM SUBMISSION & PREDICTION
@@ -319,6 +337,19 @@ function displayResult(data, payload) {
 }
 
 function animateCounter(el, from, to, duration) {
+  // Write the real figure first, then animate over it.
+  //
+  // requestAnimationFrame does not run in a backgrounded tab. If the count-up
+  // were the only thing that ever set this text, a prediction that finished
+  // while the tab was hidden would leave the user looking at the placeholder
+  // when they came back. Putting the value in immediately means the number is
+  // always correct, and the animation is decoration on top of it.
+  el.textContent = to.toFixed(2);
+
+  // Counting up is motion for its own sake. Anyone who has asked for less of
+  // it keeps the figure they came for and skips the tick.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
   const startTime = performance.now();
   const update = (currentTime) => {
     const elapsed = currentTime - startTime;
@@ -331,21 +362,43 @@ function animateCounter(el, from, to, duration) {
   requestAnimationFrame(update);
 }
 
+
+/* One icon per summary row, keyed to what the row actually reports. Replaces
+   emoji, which arrived in a different colour, weight and baseline on every
+   machine and clashed with the SVG used everywhere else. */
+const SUMMARY_ICONS = {
+  location:   '<path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/>',
+  type:       '<path d="M3 9.5 12 2.5l9 7V20a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 20Z"/><path d="M9.5 21.5v-7h5v7"/>',
+  bhk:        '<path d="M3 17v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4"/><path d="M3 17h18v3"/><path d="M6.5 11V8.5A1.5 1.5 0 0 1 8 7h8a1.5 1.5 0 0 1 1.5 1.5V11"/>',
+  size:       '<path d="M3.5 20.5 20.5 3.5"/><path d="M3.5 14v6.5H10"/><path d="M20.5 10V3.5H14"/>',
+  bathrooms:  '<path d="M4 12h16v3a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4Z"/><path d="M7 12V6.5A2.5 2.5 0 0 1 11.5 5"/><path d="M8.5 22l-1 1.5M15.5 22l1 1.5"/>',
+  balconies:  '<path d="M3 10h18"/><path d="M5 10v10M19 10v10M3 20h18"/><path d="M9 10v10M15 10v10"/><path d="M6 10 12 4l6 6"/>',
+  furnishing: '<path d="M4 17v-5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v5"/><path d="M2 17h20v3H2Z"/><path d="M6 10V7.5A1.5 1.5 0 0 1 7.5 6h9A1.5 1.5 0 0 1 18 7.5V10"/>',
+  age:        '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/>',
+};
+
+const summaryIcon = (key) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ` +
+  `stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SUMMARY_ICONS[key] || ''}</svg>`;
+
 function renderSummary(data, payload) {
   const grid = document.getElementById('summaryGrid');
   const items = [
-    { icon: '📍', label: 'Location', value: `${data.city}, ${data.locality}` },
-    { icon: '🏠', label: 'Type',     value: payload.property_type },
-    { icon: '🛏️', label: 'BHK',      value: `${payload.bhk} BHK` },
-    { icon: '📐', label: 'Size',      value: `${payload.size_sqft.toLocaleString('en-IN')} sq.ft` },
-    { icon: '🛁', label: 'Bathrooms', value: payload.bathrooms },
-    { icon: '🪟', label: 'Balconies', value: payload.balconies },
-    { icon: '🛋️', label: 'Furnishing',value: payload.furnishing },
-    { icon: '🏗️', label: 'Age',       value: `${payload.property_age} yr${payload.property_age !== 1 ? 's' : ''}` },
+    { icon: summaryIcon('location'), label: 'Location', value: `${data.city}, ${data.locality}` },
+    { icon: summaryIcon('type'), label: 'Type',     value: payload.property_type },
+    { icon: summaryIcon('bhk'), label: 'BHK',      value: `${payload.bhk} BHK` },
+    { icon: summaryIcon('size'), label: 'Size',      value: `${payload.size_sqft.toLocaleString('en-IN')} sq.ft` },
+    { icon: summaryIcon('bathrooms'), label: 'Bathrooms', value: payload.bathrooms },
+    { icon: summaryIcon('balconies'), label: 'Balconies', value: payload.balconies },
+    { icon: summaryIcon('furnishing'), label: 'Furnishing',value: payload.furnishing },
+    { icon: summaryIcon('age'), label: 'Age',       value: `${payload.property_age} yr${payload.property_age !== 1 ? 's' : ''}` },
   ];
 
-  grid.innerHTML = items.map(({ icon, label, value }) => `
-    <div class="summary-item animate-in">
+  // --i drives the staggered entrance in the stylesheet. The animate-in class
+  // is deliberately not applied: it carries its own fadeInUp, and two
+  // animations on one element race rather than combine.
+  grid.innerHTML = items.map(({ icon, label, value }, i) => `
+    <div class="summary-item" style="--i: ${i}">
       <span class="summary-icon">${icon}</span>
       <div class="summary-info">
         <span class="summary-label">${label}</span>
@@ -358,7 +411,7 @@ function renderSummary(data, payload) {
 function renderFeatureImpacts(impacts) {
   const list = document.getElementById('impactList');
   list.innerHTML = impacts.map(({ feature, impact_percent, direction }, i) => `
-    <div class="impact-item animate-in" style="animation-delay: ${i * 60}ms">
+    <div class="impact-item" style="--i: ${i}">
       <div class="impact-header">
         <span class="impact-name">${feature}</span>
         <span class="impact-pct">${impact_percent.toFixed(1)}%</span>
@@ -371,11 +424,17 @@ function renderFeatureImpacts(impacts) {
     </div>
   `).join('');
 
-  // Animate bars
-  requestAnimationFrame(() => {
-    document.querySelectorAll('.impact-bar-fill').forEach(bar => {
-      bar.style.width = bar.dataset.width + '%';
-    });
+  // Grow the bars from zero.
+  //
+  // Reading offsetWidth forces the browser to commit the 0% starting width
+  // before the real one is assigned, which is what gives the CSS transition
+  // two values to move between. The previous version deferred this to
+  // requestAnimationFrame, which does not run in a backgrounded tab - so a
+  // prediction that completed while the tab was hidden left every bar sitting
+  // at 0% next to a percentage label that disagreed with it.
+  document.querySelectorAll('.impact-bar-fill').forEach(bar => {
+    void bar.offsetWidth;
+    bar.style.width = bar.dataset.width + '%';
   });
 }
 
@@ -426,11 +485,20 @@ function renderCityChart(data) {
       datasets: [{
         label: 'Avg ₹/sq.ft',
         data: values,
-        backgroundColor: [
-          'rgba(16,185,129,0.8)', 'rgba(99,102,241,0.8)', 'rgba(245,158,11,0.8)',
-          'rgba(236,72,153,0.8)', 'rgba(59,130,246,0.8)', 'rgba(168,85,247,0.8)',
-          'rgba(234,179,8,0.8)',  'rgba(20,184,166,0.8)',
-        ],
+        // One hue, with intensity scaled by the value.
+        //
+        // This was a palette of eight colours that Chart.js cycled through for
+        // twenty-odd cities, which meant the colour said nothing: every bar is
+        // the same measurement, so a rainbow only competes with the heights
+        // that carry the actual information. Tying opacity to the value makes
+        // the colour restate the magnitude instead of contradicting it.
+        backgroundColor: values.map((v) => {
+          const max = Math.max(...values);
+          const min = Math.min(...values);
+          const t = max === min ? 1 : (v - min) / (max - min);
+          return `rgba(16, 185, 129, ${(0.32 + t * 0.6).toFixed(3)})`;
+        }),
+        hoverBackgroundColor: 'rgba(52, 211, 153, 1)',
         borderColor: 'transparent',
         borderRadius: 8,
         borderSkipped: false,
@@ -547,7 +615,10 @@ function renderCityTable() {
       <tr>
         <td>
           <div class="city-name-cell">
-            ${getCityEmoji(city.city)} ${city.city}
+            <svg class="cell-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/>
+            </svg>${city.city}
           </div>
         </td>
         <td>₹${Math.round(city.base_price_sqft).toLocaleString('en-IN')}/sq.ft</td>
@@ -576,14 +647,25 @@ async function loadHistory() {
       return;
     }
 
-    grid.innerHTML = history.map(item => `
-      <div class="history-card animate-in">
+    // One pin for every city, rather than a per-city emoji. The old map paired
+    // Mumbai with a wave and Indore with a broom - arbitrary associations that
+    // rendered differently on every machine and told the reader nothing.
+    const pin = `<svg class="hcard-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 21s7-5.4 7-11a7 7 0 1 0-14 0c0 5.6 7 11 7 11Z"/><circle cx="12" cy="10" r="2.4"/></svg>`;
+
+    const clock = `<svg class="hcard-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>`;
+
+    grid.innerHTML = history.map((item, i) => `
+      <div class="history-card" style="--i: ${Math.min(i, 11)}">
         <div class="hcard-header">
-          <div>
-            <div class="hcard-city">${getCityEmoji(item.city)} ${item.city}</div>
+          <div class="hcard-place">
+            <div class="hcard-city">${pin}${item.city}</div>
             <div class="hcard-locality">${item.locality}</div>
           </div>
-          <div>
+          <div class="hcard-amount">
             <div class="hcard-price">₹${item.price_in_lakhs.toFixed(1)}L</div>
             <div class="hcard-price-label">Estimated</div>
           </div>
@@ -592,9 +674,9 @@ async function loadHistory() {
           <span class="hcard-tag">${item.bhk} BHK</span>
           <span class="hcard-tag">${Math.round(item.size_sqft).toLocaleString('en-IN')} sq.ft</span>
           <span class="hcard-tag">${item.property_type}</span>
-          <span class="hcard-tag">₹${Math.round(item.price_per_sqft).toLocaleString('en-IN')}/sqft</span>
+          <span class="hcard-tag hcard-tag--rate">₹${Math.round(item.price_per_sqft).toLocaleString('en-IN')}/sqft</span>
         </div>
-        <div class="hcard-time">${formatDate(item.created_at)}</div>
+        <div class="hcard-time">${clock}${formatDate(item.created_at)}</div>
       </div>
     `).join('');
 
@@ -791,3 +873,237 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeFeedbackModal();
 });
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Scroll reveal
+
+   Sections below the fold start displaced and settle as they scroll into
+   view, once each. Marking them from JS rather than in the HTML means a
+   browser without IntersectionObserver simply never adds the attribute, so
+   the content stays visible instead of being stranded at opacity 0.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+function setupScrollReveal() {
+  if (!('IntersectionObserver' in window)) return;
+
+  const targets = document.querySelectorAll(
+    '.analytics-layout > *, .history-layout > *, .charts-row > *, ' +
+    '.model-stats-row > *, .table-card, .footer'
+  );
+  if (!targets.length) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-visible');
+      // Reveal once. Leaving it observed would replay the entrance every time
+      // the user scrolled back past it, which reads as a glitch rather than
+      // as polish.
+      observer.unobserve(entry.target);
+    });
+  }, {
+    // Fires slightly before the element reaches the fold, so it is already
+    // settled by the time it is properly in view.
+    rootMargin: '0px 0px -12% 0px',
+    threshold: 0.05,
+  });
+
+  targets.forEach((el, i) => {
+    el.setAttribute('data-reveal', '');
+    el.style.transitionDelay = `${Math.min(i, 6) * 60}ms`;
+    observer.observe(el);
+  });
+}
+
+/* The navbar solidifies once the page scrolls under it. Passive listener so
+   the handler can never block scrolling, and the class is only touched when
+   the state actually changes rather than on every scroll event. */
+function setupNavbarScroll() {
+  const nav = document.querySelector('.navbar');
+  if (!nav) return;
+
+  let solid = false;
+  const sync = () => {
+    const shouldBeSolid = window.scrollY > 12;
+    if (shouldBeSolid === solid) return;
+    solid = shouldBeSolid;
+    nav.classList.toggle('is-scrolled', solid);
+  };
+
+  sync();
+  window.addEventListener('scroll', sync, { passive: true });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Styled selects
+
+   A native <select> renders its option list through the operating system.
+   That is why the dropdowns opened as a plain grey Windows list on a dark
+   page - no amount of CSS on <option> can reach it.
+
+   This enhances rather than replaces. The real <select> stays in the DOM and
+   remains the source of truth, so everything already reading .value, listening
+   for 'change', or repopulating <option> elements (the city -> locality
+   cascade) keeps working untouched. Only the visible list is ours.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+// Option labels carry decorative emoji that render differently on every
+// machine. The list draws its own icons, so the text is stripped to the words.
+const stripEmoji = (text) =>
+  text.replace(/^[\p{Extended_Pictographic}️‍\s]+/u, '').trim();
+
+function enhanceSelects() {
+  document.querySelectorAll('.select-wrapper > select').forEach(enhanceSelect);
+}
+
+function enhanceSelect(select) {
+  const wrapper = select.parentElement;
+  wrapper.classList.add('cselect');
+
+  // The stock arrow belongs to the native control we are covering.
+  wrapper.querySelector('.select-arrow')?.remove();
+
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'cselect-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+  if (select.id) trigger.setAttribute('aria-labelledby', `${select.id}-label`);
+
+  const label = document.createElement('span');
+  label.className = 'cselect-value';
+
+  const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  chevron.setAttribute('class', 'cselect-chevron');
+  chevron.setAttribute('viewBox', '0 0 16 16');
+  chevron.setAttribute('fill', 'none');
+  chevron.innerHTML = '<path d="M4 6.5 8 10.5 12 6.5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>';
+
+  trigger.append(label, chevron);
+
+  const list = document.createElement('ul');
+  list.className = 'cselect-list';
+  list.setAttribute('role', 'listbox');
+  list.hidden = true;
+
+  wrapper.append(trigger, list);
+
+  let open = false;
+  let activeIndex = 0;
+
+  const options = () => [...select.options];
+
+  const syncLabel = () => {
+    const chosen = select.options[select.selectedIndex];
+    const text = chosen ? stripEmoji(chosen.textContent) : '';
+    label.textContent = text;
+    // Placeholder options carry an empty value; grey them out like one.
+    label.classList.toggle('is-placeholder', !select.value);
+    trigger.disabled = select.disabled;
+    wrapper.classList.toggle('is-disabled', select.disabled);
+  };
+
+  const buildList = () => {
+    list.innerHTML = '';
+    options().forEach((opt, i) => {
+      const li = document.createElement('li');
+      li.className = 'cselect-option';
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', String(i === select.selectedIndex));
+      if (i === select.selectedIndex) li.classList.add('is-selected');
+      li.dataset.index = String(i);
+
+      const text = document.createElement('span');
+      text.textContent = stripEmoji(opt.textContent);
+      li.append(text);
+
+      if (i === select.selectedIndex) {
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        tick.setAttribute('class', 'cselect-check');
+        tick.setAttribute('viewBox', '0 0 16 16');
+        tick.setAttribute('fill', 'none');
+        tick.innerHTML = '<path d="M3.5 8.5 6.5 11.5 12.5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>';
+        li.append(tick);
+      }
+
+      // Staggered entrance, capped so a 260-locality list does not deal
+      // itself out one row at a time.
+      li.style.setProperty('--i', String(Math.min(i, 10)));
+      list.append(li);
+    });
+  };
+
+  const setActive = (i) => {
+    activeIndex = Math.max(0, Math.min(i, options().length - 1));
+    [...list.children].forEach((li, idx) => li.classList.toggle('is-active', idx === activeIndex));
+    list.children[activeIndex]?.scrollIntoView({ block: 'nearest' });
+  };
+
+  const openList = () => {
+    if (select.disabled || !options().length) return;
+    buildList();
+    list.hidden = false;
+    open = true;
+    wrapper.classList.add('is-open');
+    trigger.setAttribute('aria-expanded', 'true');
+    setActive(Math.max(select.selectedIndex, 0));
+  };
+
+  const closeList = () => {
+    list.hidden = true;
+    open = false;
+    wrapper.classList.remove('is-open');
+    trigger.setAttribute('aria-expanded', 'false');
+  };
+
+  const commit = (i) => {
+    const opt = select.options[i];
+    if (!opt) return;
+    select.selectedIndex = i;
+    syncLabel();
+    closeList();
+    // Dispatched so existing listeners - the city -> locality cascade above
+    // all - fire exactly as they did with the native control.
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  trigger.addEventListener('click', () => (open ? closeList() : openList()));
+
+  trigger.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'ArrowDown': e.preventDefault(); open ? setActive(activeIndex + 1) : openList(); break;
+      case 'ArrowUp':   e.preventDefault(); open ? setActive(activeIndex - 1) : openList(); break;
+      case 'Home':      if (open) { e.preventDefault(); setActive(0); } break;
+      case 'End':       if (open) { e.preventDefault(); setActive(options().length - 1); } break;
+      case 'Enter':
+      case ' ':         e.preventDefault(); open ? commit(activeIndex) : openList(); break;
+      case 'Escape':    if (open) { e.preventDefault(); closeList(); } break;
+      case 'Tab':       closeList(); break;
+    }
+  });
+
+  list.addEventListener('mousedown', (e) => e.preventDefault());  // keep focus on the trigger
+  list.addEventListener('click', (e) => {
+    const li = e.target.closest('.cselect-option');
+    if (li) commit(Number(li.dataset.index));
+  });
+  list.addEventListener('mouseover', (e) => {
+    const li = e.target.closest('.cselect-option');
+    if (li) setActive(Number(li.dataset.index));
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (open && !wrapper.contains(e.target)) closeList();
+  });
+
+  // The city dropdown rewrites the locality options at runtime, and disables
+  // or enables it. Watching the element keeps the visible list honest without
+  // that code needing to know this enhancement exists.
+  new MutationObserver(() => { syncLabel(); if (open) buildList(); })
+    .observe(select, { childList: true, attributes: true, attributeFilter: ['disabled'] });
+
+  // Anything setting select.value directly still needs the label to follow.
+  select.addEventListener('change', syncLabel);
+
+  syncLabel();
+}

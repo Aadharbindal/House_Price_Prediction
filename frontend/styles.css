@@ -1524,3 +1524,1260 @@ body {
   .result-actions { grid-template-columns: 1fr; }
   .summary-grid { grid-template-columns: 1fr; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MOTION SYSTEM
+   The visual design was already here; almost none of it moved. 1,500 lines of
+   styling carried 23 transitions, so the interface changed state by cutting.
+   Everything below is additive and appended last, so it wins on source order
+   without any of the rules above needing to be touched.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* One decelerate curve for arrivals, one overshoot for anything that should
+     feel physical, one accelerate for departures. */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --dur-instant: 120ms;
+  --dur-fast:    200ms;
+  --dur-base:    320ms;
+  --dur-slow:    560ms;
+  --dur-slower:  820ms;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────────── */
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes revealScale {
+  0%   { opacity: 0; transform: translateY(20px) scale(0.97); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.5); }
+  70%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-18px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* A highlight travelling once across a surface. */
+@keyframes sweep {
+  0%   { transform: translateX(-130%) skewX(-18deg); }
+  100% { transform: translateX(320%)  skewX(-18deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* Expanding ring, for anything announcing itself as live. */
+@keyframes ringOut {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  70%  { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes barGrow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes tabIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tabOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+
+/* The price landing. Overshoots slightly, which is what makes the number feel
+   delivered rather than printed. */
+@keyframes priceLand {
+  0%   { opacity: 0; transform: scale(0.82); filter: blur(6px); }
+  65%  { opacity: 1; transform: scale(1.04); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Page-load choreography ────────────────────────────────────────────────
+   The navbar, then the hero lines one after another, then the two columns.
+   `backwards` holds the first frame through the delay so nothing flashes at
+   full opacity before its turn.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.navbar        { animation: revealUp var(--dur-base) var(--ease-out) backwards; }
+.hero-badge    { animation: revealUp var(--dur-slow) var(--ease-out)  80ms backwards; }
+.hero-title    { animation: revealUp var(--dur-slow) var(--ease-out) 160ms backwards; }
+.hero-subtitle { animation: revealUp var(--dur-slow) var(--ease-out) 240ms backwards; }
+
+.tab-content.active > .predict-layout > .form-card {
+  animation: revealScale var(--dur-slow) var(--ease-out) 300ms backwards;
+}
+
+.tab-content.active > .predict-layout > .results-panel {
+  animation: revealScale var(--dur-slow) var(--ease-out) 380ms backwards;
+}
+
+/* ── Scroll reveal ─────────────────────────────────────────────────────────
+   Driven by an IntersectionObserver in app.js. Elements start displaced and
+   settle as they enter the viewport, once each.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity var(--dur-slow) var(--ease-out),
+              transform var(--dur-slow) var(--ease-out);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Tab switching ────────────────────────────────────────────────────────── */
+
+.tab-content.active { animation: tabIn var(--dur-base) var(--ease-out); }
+
+.tab-content.is-leaving {
+  animation: tabOut 160ms var(--ease-in) forwards;
+  pointer-events: none;
+}
+
+/* The active nav pill gains a travelling underline rather than only a colour
+   change, so which tab you are on is legible at a glance. */
+.nav-link { position: relative; overflow: hidden; }
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.nav-link.active::after { transform: scaleX(1); }
+
+.nav-link:hover  { transform: translateY(-1px); }
+.nav-link:active { transform: scale(0.96); transition-duration: var(--dur-instant); }
+
+/* ── Result reveal ─────────────────────────────────────────────────────────
+   The payoff of the whole app, so it is sequenced rather than dumped: the
+   card, then the number landing, then the range bar filling, then the rows.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.result-content:not(.hidden) .price-card {
+  animation: revealScale var(--dur-slow) var(--ease-out) backwards;
+}
+
+.result-content:not(.hidden) .price-main {
+  animation: priceLand 620ms var(--ease-spring) 180ms backwards;
+}
+
+.result-content:not(.hidden) .price-psf {
+  animation: revealUp var(--dur-base) var(--ease-out) 420ms backwards;
+}
+
+.result-content:not(.hidden) .price-range {
+  animation: revealUp var(--dur-base) var(--ease-out) 500ms backwards;
+}
+
+.result-content:not(.hidden) .summary-card {
+  animation: revealScale var(--dur-slow) var(--ease-out) 240ms backwards;
+}
+
+.result-content:not(.hidden) .impact-card {
+  animation: revealScale var(--dur-slow) var(--ease-out) 330ms backwards;
+}
+
+.result-content:not(.hidden) .result-actions {
+  animation: revealUp var(--dur-base) var(--ease-out) 430ms backwards;
+}
+
+/* The range bar draws itself out from the low end. */
+.result-content:not(.hidden) .range-fill {
+  transform-origin: left center;
+  animation: barGrow 700ms var(--ease-out) 560ms backwards;
+}
+
+.result-content:not(.hidden) .range-marker {
+  animation: popIn 420ms var(--ease-spring) 900ms backwards;
+}
+
+/* Rows land one after another. The index arrives from app.js as --i. */
+.summary-grid > *,
+.impact-list > * {
+  animation: slideInLeft var(--dur-base) var(--ease-out) backwards;
+  animation-delay: calc(300ms + (var(--i, 0) * 50ms));
+}
+
+/* The impact bars are deliberately left alone: .impact-bar-fill already
+   transitions its width from zero, driven from app.js. Adding a scaleX
+   animation here would be a second mechanism fighting the first over the
+   same pixels. */
+
+/* ── Form micro-interactions ──────────────────────────────────────────────── */
+
+.bhk-chip,
+.amenity-chip {
+  transition: transform var(--dur-fast) var(--ease-out),
+              background-color var(--dur-fast) var(--ease-smooth),
+              border-color var(--dur-fast) var(--ease-smooth),
+              box-shadow var(--dur-fast) var(--ease-smooth),
+              color var(--dur-fast) var(--ease-smooth);
+}
+
+.bhk-chip:hover,
+.amenity-chip:hover { transform: translateY(-2px); }
+
+/* A press has to give way, or clicking a chip reads as nothing happening. */
+.bhk-chip:active,
+.amenity-chip:active {
+  transform: scale(0.94);
+  transition-duration: var(--dur-instant);
+}
+
+/* Selection pops once, so the change is felt and not merely seen. */
+.bhk-chip.selected,
+.amenity-chip.selected {
+  animation: popIn 340ms var(--ease-spring);
+}
+
+.form-select,
+.form-input,
+.form-textarea {
+  transition: border-color var(--dur-fast) var(--ease-smooth),
+              box-shadow var(--dur-fast) var(--ease-smooth),
+              background-color var(--dur-fast) var(--ease-smooth);
+}
+
+.form-select:focus,
+.form-input:focus,
+.form-textarea:focus {
+  box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+.select-wrapper .select-arrow {
+  transition: transform var(--dur-base) var(--ease-spring),
+              color var(--dur-fast) var(--ease-smooth);
+}
+
+.select-wrapper:focus-within .select-arrow {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+/* The slider thumb grows under the cursor so the grab target is obvious. */
+.range-slider::-webkit-slider-thumb {
+  transition: transform var(--dur-fast) var(--ease-spring),
+              box-shadow var(--dur-fast) var(--ease-smooth);
+}
+
+.range-slider:hover::-webkit-slider-thumb  { transform: scale(1.18); }
+.range-slider:active::-webkit-slider-thumb { transform: scale(1.32); }
+
+.slider-track-fill { transition: width var(--dur-fast) var(--ease-out); }
+
+.stepper-btn {
+  transition: transform var(--dur-fast) var(--ease-spring),
+              background-color var(--dur-fast) var(--ease-smooth);
+}
+
+.stepper-btn:hover  { transform: scale(1.12); }
+.stepper-btn:active { transform: scale(0.9); transition-duration: var(--dur-instant); }
+
+.star {
+  transition: transform var(--dur-fast) var(--ease-spring),
+              color var(--dur-fast) var(--ease-smooth);
+}
+
+.star:hover { transform: scale(1.25) rotate(-8deg); }
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+.predict-btn,
+.action-btn,
+.refresh-btn {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-base) var(--ease-smooth),
+              background-color var(--dur-fast) var(--ease-smooth),
+              border-color var(--dur-fast) var(--ease-smooth);
+}
+
+/* Light crosses the face on hover. */
+.predict-btn::after,
+.action-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: translateX(-130%) skewX(-18deg);
+  pointer-events: none;
+}
+
+.predict-btn:hover::after,
+.action-btn:hover::after { animation: sweep 780ms var(--ease-out); }
+
+.predict-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 38px -10px var(--color-primary-glow), var(--shadow-md);
+}
+
+.predict-btn:active:not(:disabled),
+.action-btn:active,
+.refresh-btn:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-instant);
+}
+
+.action-btn:hover,
+.refresh-btn:hover { transform: translateY(-2px); }
+
+/* ── Cards ────────────────────────────────────────────────────────────────── */
+
+.glass-card,
+.chart-card,
+.model-stat-card,
+.table-card {
+  transition: transform var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-smooth),
+              box-shadow var(--dur-base) var(--ease-smooth);
+}
+
+.model-stat-card:hover,
+.chart-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-border-bright);
+  box-shadow: var(--shadow-md), 0 0 30px -12px var(--color-primary-glow);
+}
+
+.model-stat-card:hover .mstat-icon { animation: popIn 420ms var(--ease-spring); }
+
+/* ── Live indicator ───────────────────────────────────────────────────────── */
+
+.badge-dot { position: relative; }
+
+.badge-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: ringOut 2.4s var(--ease-out) infinite;
+}
+
+/* ── Loading ──────────────────────────────────────────────────────────────── */
+
+.btn-loader { animation: spin 700ms linear infinite; }
+
+/* A skeleton shimmer for anything waiting on the network. */
+.is-loading {
+  background: linear-gradient(90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* ── Table rows ───────────────────────────────────────────────────────────── */
+
+.market-table tbody tr {
+  transition: background-color var(--dur-fast) var(--ease-smooth),
+              transform var(--dur-fast) var(--ease-out);
+}
+
+.market-table tbody tr:hover {
+  background: var(--color-surface-hover);
+  transform: translateX(3px);
+}
+
+/* ── History cards ────────────────────────────────────────────────────────── */
+
+.history-grid > * {
+  animation: revealScale var(--dur-base) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 45ms);
+  transition: transform var(--dur-base) var(--ease-out),
+              border-color var(--dur-base) var(--ease-smooth);
+}
+
+.history-grid > *:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-border-bright);
+}
+
+/* ── Modal ────────────────────────────────────────────────────────────────── */
+
+.modal-overlay { animation: fadeIn var(--dur-fast) var(--ease-out); }
+
+.modal-card {
+  animation: revealScale var(--dur-base) var(--ease-spring);
+  transform-origin: center;
+}
+
+.modal-close {
+  transition: transform var(--dur-fast) var(--ease-spring),
+              background-color var(--dur-fast) var(--ease-smooth);
+}
+
+.modal-close:hover { transform: rotate(90deg); }
+
+/* ── Reduced motion ───────────────────────────────────────────────────────────
+   What this setting asks to remove is *movement* — the endless, ambient,
+   unprompted kind. It does not ask for the removal of feedback. Cutting every
+   duration to zero, as the usual one-liner does, leaves an interface where
+   elements teleport between states, which is harsher to read than a short
+   transition and tells the user less.
+
+   So the drifting orbs, the pulsing ring and the shimmer stop outright, while
+   everything the user themselves initiated keeps its (brief) animation.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast:   120ms;
+    --dur-base:   160ms;
+    --dur-slow:   200ms;
+    --dur-slower: 240ms;
+  }
+
+  .bg-orb,
+  .badge-dot::after,
+  .is-loading {
+    animation: none !important;
+  }
+
+  /* Arrivals fade in place instead of travelling. */
+  [data-reveal] { transform: none; }
+
+  .navbar, .hero-badge, .hero-title, .hero-subtitle,
+  .tab-content.active > .predict-layout > .form-card,
+  .tab-content.active > .predict-layout > .results-panel,
+  .result-content:not(.hidden) .price-card,
+  .result-content:not(.hidden) .price-main,
+  .result-content:not(.hidden) .summary-card,
+  .result-content:not(.hidden) .impact-card,
+  .summary-grid > *,
+  .impact-list > *,
+  .history-grid > * {
+    animation-name: fadeIn !important;
+    animation-duration: var(--dur-slow) !important;
+  }
+
+  /* Hover lifts and press nudges are movement too. */
+  .predict-btn:hover:not(:disabled),
+  .action-btn:hover,
+  .refresh-btn:hover,
+  .nav-link:hover,
+  .bhk-chip:hover,
+  .amenity-chip:hover,
+  .model-stat-card:hover,
+  .chart-card:hover,
+  .history-grid > *:hover,
+  .market-table tbody tr:hover {
+    transform: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SCROLLBARS
+   Hidden, scrolling intact. Nothing here touches overflow - only the painting
+   of the bar itself - so wheel, trackpad, touch, keyboard (arrows, Page keys,
+   Home/End) and programmatic scrolling all behave exactly as before.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+* {
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* legacy Edge / IE */
+}
+
+*::-webkit-scrollbar {
+  display: none;              /* Chromium / WebKit */
+  width: 0;
+  height: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* The bar sat at a flat 80% opacity whatever was behind it. Now it starts
+   almost transparent over the hero and solidifies as the page scrolls under
+   it, so it reads as glass rather than as a panel bolted to the top. The
+   .is-scrolled class is applied from app.js. */
+.navbar {
+  background: rgba(8, 12, 20, 0.55);
+  border-bottom-color: transparent;
+  transition: background-color var(--dur-base) var(--ease-smooth),
+              border-color var(--dur-base) var(--ease-smooth),
+              box-shadow var(--dur-base) var(--ease-smooth);
+}
+
+.navbar.is-scrolled {
+  background: rgba(8, 12, 20, 0.88);
+  border-bottom-color: var(--color-border);
+  box-shadow: 0 8px 32px -16px rgba(0, 0, 0, 0.8);
+}
+
+/* --- Brand ---------------------------------------------------------------- */
+
+.nav-brand {
+  transition: transform var(--dur-base) var(--ease-out);
+}
+
+.brand-icon {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-smooth);
+}
+
+/* A highlight crosses the tile when the brand is hovered. */
+.brand-icon::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: translateX(-140%) skewX(-18deg);
+  pointer-events: none;
+}
+
+.nav-brand:hover .brand-icon {
+  transform: rotate(-6deg) scale(1.06);
+  box-shadow: 0 0 28px var(--color-primary-glow);
+}
+
+.nav-brand:hover .brand-icon::after { animation: sweep 700ms var(--ease-out); }
+
+.nav-brand:active { transform: scale(0.97); }
+
+/* --- Nav items ------------------------------------------------------------ */
+
+/* The icons are SVG now, so they need a box rather than a font size. */
+.nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.nav-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.nav-link {
+  gap: var(--space-sm);
+  /* A transparent border at rest, so gaining the active border does not shift
+     the pill by a pixel. */
+  border: 1px solid transparent;
+}
+
+/* The pill already marks the active tab. A second underline underneath it was
+   saying the same thing twice, and sat detached below the pill's own edge. */
+.nav-link::after { content: none; }
+
+.nav-link:hover {
+  color: var(--color-text-primary);
+  background: var(--color-surface-hover);
+}
+
+.nav-link.active {
+  box-shadow: 0 0 18px -6px var(--color-primary-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+/* The icon carries the accent on the active tab and lifts slightly on hover,
+   which gives the row a focal point without adding another colour. */
+.nav-link .nav-icon {
+  transition: transform var(--dur-base) var(--ease-spring),
+              color var(--dur-fast) var(--ease-smooth);
+}
+
+.nav-link:hover .nav-icon  { transform: translateY(-1px) scale(1.1); }
+.nav-link.active .nav-icon { color: var(--color-primary); }
+
+/* --- Status pill ---------------------------------------------------------- */
+
+.nav-status {
+  transition: border-color var(--dur-base) var(--ease-smooth),
+              background-color var(--dur-base) var(--ease-smooth);
+}
+
+.nav-status:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.status-text {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.status-text strong {
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The dot reads as a live indicator rather than a bullet. */
+.status-dot {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.status-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: ringOut 2.6s var(--ease-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status-dot::after { animation: none; }
+  .nav-brand:hover .brand-icon,
+  .nav-link:hover .nav-icon { transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   STYLED SELECTS
+   The native control stays in the DOM as the source of truth; it is taken out
+   of view rather than out of the document, so app.js keeps reading .value and
+   the city -> locality cascade is untouched.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.cselect { position: relative; }
+
+.cselect > select {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  border: 0;
+  pointer-events: none;
+}
+
+.cselect-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-text-primary);
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-smooth),
+              background-color var(--dur-fast) var(--ease-smooth),
+              box-shadow var(--dur-fast) var(--ease-smooth);
+}
+
+.cselect-trigger:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: var(--color-surface-hover);
+}
+
+.cselect.is-open .cselect-trigger,
+.cselect-trigger:focus-visible {
+  outline: none;
+  border-color: var(--color-border-bright);
+  background: rgba(16, 185, 129, 0.06);
+  box-shadow: 0 0 0 4px var(--color-primary-glow);
+}
+
+.cselect.is-disabled { opacity: 0.5; }
+.cselect-trigger:disabled { cursor: not-allowed; }
+
+.cselect-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cselect-value.is-placeholder { color: var(--color-text-muted); }
+
+.cselect-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: transform var(--dur-base) var(--ease-spring),
+              color var(--dur-fast) var(--ease-smooth);
+}
+
+.cselect.is-open .cselect-chevron {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+/* --- The list ------------------------------------------------------------- */
+
+.cselect-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  max-height: 280px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: linear-gradient(180deg, rgba(20, 27, 45, 0.98), rgba(10, 14, 24, 0.99));
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  /* Grows out of the trigger rather than fading in on top of it. */
+  transform-origin: top center;
+  animation: revealScale var(--dur-base) var(--ease-out);
+}
+
+.cselect-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-smooth),
+              color var(--dur-fast) var(--ease-smooth);
+  animation: slideInLeft var(--dur-fast) var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 22ms);
+}
+
+/* One highlight, shared by pointer and keyboard, so arrowing down while the
+   mouse rests elsewhere cannot light up two rows at once. */
+.cselect-option.is-active {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+
+.cselect-option.is-selected {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.cselect-option.is-selected.is-active { background: rgba(16, 185, 129, 0.12); }
+
+.cselect-check {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CARDS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* A hairline of light along the top edge. Large dark panels read as flat
+   rectangles without one; this is what makes them look lit. */
+.glass-card {
+  position: relative;
+  isolation: isolate;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18) 20%,
+    rgba(255, 255, 255, 0.18) 80%,
+    transparent);
+  pointer-events: none;
+}
+
+.form-card:hover,
+.summary-card:hover,
+.impact-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* The price card is the payoff, so it gets a wash of the accent behind it
+   rather than the same flat glass as everything else. */
+.price-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.price-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(120% 90% at 12% 0%, rgba(16, 185, 129, 0.16), transparent 62%);
+  pointer-events: none;
+}
+
+:root { --card-icon-size: 34px; }
+
+/* --- Card headings -------------------------------------------------------- */
+
+.card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: rgba(16, 185, 129, 0.10);
+  color: var(--color-primary);
+  font-size: 1rem;
+  flex-shrink: 0;
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-smooth);
+}
+
+.card-icon svg { width: 18px; height: 18px; }
+
+.form-card:hover .card-icon {
+  transform: scale(1.06);
+  box-shadow: 0 0 20px -6px var(--color-primary-glow);
+}
+
+/* --- Placeholder ---------------------------------------------------------- */
+
+/* It occupies the whole right column while the form is being filled, so it
+   should look composed rather than like a card waiting for content. */
+.results-placeholder {
+  position: relative;
+}
+
+.placeholder-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--color-primary);
+  animation: float 5s var(--ease-smooth) infinite;
+}
+
+.placeholder-icon svg { width: 34px; height: 34px; }
+
+.placeholder-bullets { gap: 10px; }
+
+.bullet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color var(--dur-base) var(--ease-smooth),
+              background-color var(--dur-base) var(--ease-smooth),
+              transform var(--dur-base) var(--ease-out);
+}
+
+.bullet-item:hover {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.05);
+  transform: translateX(3px);
+}
+
+.bullet-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.16);
+  color: var(--color-primary);
+}
+
+.bullet-check svg { width: 11px; height: 11px; }
+
+/* --- Summary rows --------------------------------------------------------- */
+
+.summary-item {
+  transition: border-color var(--dur-base) var(--ease-smooth),
+              background-color var(--dur-base) var(--ease-smooth),
+              transform var(--dur-base) var(--ease-out);
+}
+
+.summary-item:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder-icon { animation: none; }
+  .bullet-item:hover,
+  .summary-item:hover,
+  .form-card:hover .card-icon { transform: none; }
+  .cselect-option { animation-delay: 0ms; }
+}
+
+/* Aligns the subtitle with the title text, both measured from the same icon
+   size rather than from a hardcoded figure. */
+.card-subtitle {
+  margin-left: calc(var(--card-icon-size) + var(--space-sm));
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ANALYTICS
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* --- Stat cards ----------------------------------------------------------- */
+
+.model-stat-card {
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+
+/* A tinted wash from the top-left corner, so the row of four reads as lit
+   from one direction rather than as four flat tiles. */
+.model-stat-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0;
+  background: radial-gradient(120% 90% at 10% 0%, rgba(16, 185, 129, 0.16), transparent 62%);
+  transition: opacity var(--dur-base) var(--ease-smooth);
+  pointer-events: none;
+}
+
+.model-stat-card:hover::after { opacity: 1; }
+
+/* The icon was a bare emoji centred above the number. As a bordered tile it
+   sits with the label instead of floating, and matches the icon treatment
+   used on the form cards. */
+.mstat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--card-icon-size);
+  height: var(--card-icon-size);
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: rgba(16, 185, 129, 0.10);
+  color: var(--color-primary);
+  font-size: 1rem;
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-smooth);
+}
+
+.mstat-icon svg { width: 18px; height: 18px; }
+
+.model-stat-card:hover .mstat-icon {
+  box-shadow: 0 0 20px -6px var(--color-primary-glow);
+}
+
+.mstat-value {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.mstat-label {
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+}
+
+/* --- Chart cards ---------------------------------------------------------- */
+
+.chart-card { position: relative; }
+
+.chart-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* A short accent rule before the title, tying the two chart panels to the
+   same family as the form cards without repeating their icon tiles. */
+.chart-title::before {
+  content: '';
+  width: 3px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: var(--gradient-primary);
+  box-shadow: 0 0 12px var(--color-primary-glow);
+}
+
+/* --- Table ---------------------------------------------------------------- */
+
+.table-card { position: relative; }
+
+.market-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  /* Opaque, or rows scroll visibly through the header. */
+  background: rgba(13, 18, 32, 0.97);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.market-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* The row hover already shifts; this adds the accent edge that marks which
+   row the pointer is on when the table runs long. */
+.market-table tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 var(--color-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .model-stat-card:hover .mstat-icon { transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   HISTORY
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.history-grid {
+  /* auto-fill rather than a fixed count: four records in a three-column grid
+     left a conspicuous hole, and the cards keep their proportions instead of
+     stretching to fill it. */
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+  align-items: start;
+}
+
+.history-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--gradient-card);
+  overflow: hidden;
+}
+
+/* A quiet accent edge that lights up on hover, so the card the pointer is on
+   is unmistakable in a grid of near-identical records. */
+.history-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-smooth);
+}
+
+.history-card:hover::before { opacity: 1; }
+
+.history-card:hover {
+  border-color: rgba(16, 185, 129, 0.28);
+  box-shadow: var(--shadow-md), 0 0 30px -14px var(--color-primary-glow);
+}
+
+/* --- Header row ----------------------------------------------------------- */
+
+.hcard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.hcard-place { min-width: 0; }
+
+.hcard-city {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.hcard-pin {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.hcard-locality {
+  margin-top: 1px;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The figure is what the card exists to show, so it is right-aligned into its
+   own block rather than sharing a baseline with the city. */
+.hcard-amount {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.hcard-price {
+  font-family: var(--font-display);
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--color-primary);
+}
+
+.hcard-price-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* --- Tags ----------------------------------------------------------------- */
+
+.hcard-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hcard-tag {
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transition: border-color var(--dur-fast) var(--ease-smooth),
+              color var(--dur-fast) var(--ease-smooth);
+}
+
+/* The rate is the one tag that is a derived figure rather than a property
+   attribute, so it carries the accent. */
+.hcard-tag--rate {
+  border-color: rgba(16, 185, 129, 0.24);
+  background: rgba(16, 185, 129, 0.07);
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-card:hover .hcard-tag { border-color: rgba(255, 255, 255, 0.14); }
+
+/* --- Timestamp ------------------------------------------------------------ */
+
+.hcard-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hcard-clock {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+/* --- Market table cell ---------------------------------------------------- */
+
+.city-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cell-pin {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+/* --- Summary rows --------------------------------------------------------- */
+
+/* The summary icons became SVG, so the slot needs a box rather than a font
+   size to sit in. */
+.summary-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--color-primary);
+}
+
+.summary-icon svg { width: 16px; height: 16px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .history-card:hover { box-shadow: var(--shadow-md); }
+}
